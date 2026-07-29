@@ -1,0 +1,519 @@
+/* ==========================================================================
+   SDL Curtain Menu v1.0  —  curtainMenu.css
+   GSAP staggered-curtain hamburger menu for Squarespace 7.1
+   Square Design Lab
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Root variables (values are written by curtainMenu.js from the config)
+   -------------------------------------------------------------------------- */
+:root{
+  --sdlcm-width: 46vw;
+  --sdlcm-max-width: 720px;
+  --sdlcm-radius: 28px;
+  --sdlcm-pad-x: 5vw;
+  --sdlcm-pad-top: 140px;
+  --sdlcm-pad-bottom: 48px;
+
+  --sdlcm-overlay: rgba(19,19,19,.4);
+
+  --sdlcm-bg: #E3E1DE;
+  --sdlcm-text: #131313;
+  --sdlcm-hover-text: #ffffff;
+  --sdlcm-hover-bg: #131313;
+  --sdlcm-num: #FF4C24;
+
+  --sdlcm-font: inherit;
+  --sdlcm-size: 64px;
+  --sdlcm-weight: 700;
+  --sdlcm-tracking: -0.02em;
+  --sdlcm-leading: 1.02;
+  --sdlcm-transform: uppercase;
+  --sdlcm-link-pad-y: 10px;
+
+  --sdlcm-sub-size: 20px;
+  --sdlcm-sub-color: #131313;
+  --sdlcm-sub-indent: 24px;
+  --sdlcm-sub-gap: 6px;
+
+  --sdlcm-z: 9999;
+  --sdlcm-hover-ease: cubic-bezier(.65,.05,0,1);
+  --sdlcm-hover-dur: .55s;
+}
+
+/* --------------------------------------------------------------------------
+   2. Squarespace header take-over
+   -------------------------------------------------------------------------- */
+
+/* Show the native burger on desktop and retire the inline nav. The
+   `sdl-cm-desktop` class is only added above the configured breakpoint. */
+html.sdl-cm-desktop .header-display-desktop .header-burger{
+  display: flex !important;
+  align-items: center;
+}
+html.sdl-cm-desktop .header-display-desktop .header-nav{
+  display: none !important;
+}
+/* Some header layouts park the nav in the title wrapper — collapse the gap. */
+html.sdl-cm-desktop .header-display-desktop .header-title-nav-wrapper{
+  flex: 0 1 auto;
+}
+
+/* Burger on the left of the header */
+html.sdl-cm-desktop.sdl-cm-burger-left .header-display-desktop .header-burger{
+  order: -1;
+  margin-right: auto;
+}
+html.sdl-cm-desktop.sdl-cm-burger-left .header-display-desktop .header-title-nav-wrapper{
+  order: 0;
+}
+
+/* The plugin owns the overlay — never let Squarespace's own menu appear. */
+html.sdl-cm-active .header-menu{
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Scroll lock */
+html.sdl-cm-locked, html.sdl-cm-locked body{
+  overflow: hidden !important;
+  touch-action: none;
+}
+
+/* Keep the burger clickable above our overlay */
+html.sdl-cm-open .header-burger{
+  position: relative;
+  z-index: calc(var(--sdlcm-z) + 5);
+}
+
+/* --------------------------------------------------------------------------
+   3. Overlay shell
+   -------------------------------------------------------------------------- */
+.sdl-cm{
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: var(--sdlcm-z);
+  font-family: var(--sdlcm-font);
+  -webkit-font-smoothing: antialiased;
+}
+.sdl-cm *,
+.sdl-cm *::before,
+.sdl-cm *::after{ box-sizing: border-box; }
+
+.sdl-cm__scrim{
+  position: absolute;
+  inset: 0;
+  background: var(--sdlcm-overlay);
+  opacity: 0;
+  z-index: 0;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   4. Sliding panel
+   -------------------------------------------------------------------------- */
+.sdl-cm__panel{
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  width: var(--sdlcm-width);
+  max-width: var(--sdlcm-max-width);
+  margin-left: auto;                 /* side = right (default) */
+  display: flex;
+  flex-direction: column;
+  padding: var(--sdlcm-pad-top) var(--sdlcm-pad-x) var(--sdlcm-pad-bottom);
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.sdl-cm[data-side="left"]  .sdl-cm__panel{ margin-left: 0; margin-right: auto; }
+.sdl-cm[data-side="full"]  .sdl-cm__panel{ margin: 0; width: 100%; max-width: none; }
+
+/* Curtains — absolutely stacked, each slides in on its own beat. */
+.sdl-cm__curtains{
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.sdl-cm__curtain{
+  position: absolute;
+  inset: 0;
+  border-radius: var(--sdlcm-radius) 0 0 var(--sdlcm-radius);
+  will-change: transform;
+}
+.sdl-cm[data-side="left"] .sdl-cm__curtain{
+  border-radius: 0 var(--sdlcm-radius) var(--sdlcm-radius) 0;
+}
+.sdl-cm[data-side="full"] .sdl-cm__curtain{ border-radius: 0; }
+
+/* --------------------------------------------------------------------------
+   5. Link list
+   -------------------------------------------------------------------------- */
+.sdl-cm__list{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+.sdl-cm__item{ position: relative; }
+
+/* The mask that the entrance animation slides out of. Kept separate from
+   the item so an expanded submenu is never clipped. */
+.sdl-cm__row{
+  position: relative;
+  overflow: hidden;
+  display: block;
+}
+
+.sdl-cm__link{
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: .5em;
+  width: 100%;
+  padding: var(--sdlcm-link-pad-y) 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: var(--sdlcm-text);
+  text-decoration: none;
+  cursor: pointer;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+.sdl-cm[data-align="center"] .sdl-cm__link{ justify-content: center; }
+.sdl-cm[data-align="right"]  .sdl-cm__link{ justify-content: flex-end; }
+.sdl-cm[data-align="center"] .sdl-cm__list,
+.sdl-cm[data-align="center"] .sdl-cm__foot{ text-align: center; }
+.sdl-cm[data-align="right"]  .sdl-cm__list,
+.sdl-cm[data-align="right"]  .sdl-cm__foot{ text-align: right; }
+
+.sdl-cm__link:focus-visible{
+  outline: 2px solid var(--sdlcm-num);
+  outline-offset: 4px;
+}
+
+/* Hover wipe layer */
+.sdl-cm__wipe{
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--sdlcm-hover-bg);
+  transform: scaleY(0);
+  transform-origin: bottom center;
+  transition: transform var(--sdlcm-hover-dur) var(--sdlcm-hover-ease);
+  pointer-events: none;
+}
+
+.sdl-cm__text{
+  position: relative;
+  z-index: 1;
+  display: block;
+  font-family: var(--sdlcm-font);
+  font-size: var(--sdlcm-size);
+  font-weight: var(--sdlcm-weight);
+  letter-spacing: var(--sdlcm-tracking);
+  line-height: var(--sdlcm-leading);
+  text-transform: var(--sdlcm-transform);
+  color: var(--sdlcm-text);
+  transition: color .35s var(--sdlcm-hover-ease),
+              transform .55s var(--sdlcm-hover-ease);
+}
+
+.sdl-cm__num{
+  position: relative;
+  z-index: 1;
+  align-self: flex-start;
+  font-size: max(11px, calc(var(--sdlcm-size) * .18));
+  font-weight: 500;
+  letter-spacing: .04em;
+  line-height: 1;
+  color: var(--sdlcm-num);
+  transition: color .35s var(--sdlcm-hover-ease);
+  flex: 0 0 auto;
+}
+.sdl-cm__num--before{ order: -1; }
+.sdl-cm__link--folder .sdl-cm__num{ margin-right: auto; }
+
+/* Folder toggle icon */
+.sdl-cm__icon{
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  align-self: center;
+  width: max(16px, calc(var(--sdlcm-size) * .32));
+  height: max(16px, calc(var(--sdlcm-size) * .32));
+  margin-left: auto;
+  color: var(--sdlcm-text);
+  transition: transform .45s var(--sdlcm-hover-ease),
+              color .35s var(--sdlcm-hover-ease);
+}
+.sdl-cm[data-align="center"] .sdl-cm__icon,
+.sdl-cm[data-align="right"] .sdl-cm__icon{ margin-left: .35em; }
+.sdl-cm__icon svg{ width: 100%; height: 100%; display: block; }
+.sdl-cm__item.is-open > .sdl-cm__row .sdl-cm__icon--plus{ transform: rotate(135deg); }
+.sdl-cm__item.is-open > .sdl-cm__row .sdl-cm__icon--chevron,
+.sdl-cm__item.is-open > .sdl-cm__row .sdl-cm__icon--caret,
+.sdl-cm__item.is-open > .sdl-cm__row .sdl-cm__icon--arrow{ transform: rotate(180deg); }
+
+/* --------------------------------------------------------------------------
+   6. Hover effects
+   -------------------------------------------------------------------------- */
+
+/* -- wipe: dark bar sweeps up, text inverts (the Osmo reference) ----------- */
+.sdl-cm[data-hover="wipe"] .sdl-cm__link:hover .sdl-cm__wipe{ transform: scaleY(1); }
+.sdl-cm[data-hover="wipe"] .sdl-cm__link:hover .sdl-cm__text,
+.sdl-cm[data-hover="wipe"] .sdl-cm__link:hover .sdl-cm__icon{ color: var(--sdlcm-hover-text); }
+
+/* -- rollup / charRoll: the label rolls out, a clone rolls in -------------- */
+.sdl-cm__roll{
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+.sdl-cm__roll-b{
+  position: absolute;
+  left: 0; top: 0;
+  width: 100%;
+  color: var(--sdlcm-hover-text);
+  transform: translateY(100%);
+}
+.sdl-cm[data-align="center"] .sdl-cm__roll-b{ text-align: center; }
+.sdl-cm[data-align="right"]  .sdl-cm__roll-b{ text-align: right; }
+
+.sdl-cm[data-hover="rollup"] .sdl-cm__roll-a,
+.sdl-cm[data-hover="rollup"] .sdl-cm__roll-b{
+  transition: transform .5s var(--sdlcm-hover-ease);
+}
+.sdl-cm[data-hover="rollup"] .sdl-cm__link:hover .sdl-cm__roll-a{ transform: translateY(-100%); }
+.sdl-cm[data-hover="rollup"] .sdl-cm__link:hover .sdl-cm__roll-b{ transform: translateY(0); }
+.sdl-cm[data-hover="rollup"] .sdl-cm__roll-b{ color: var(--sdlcm-hover-text); }
+.sdl-cm[data-hover="rollup"] .sdl-cm__link:hover .sdl-cm__wipe{ transform: scaleY(1); }
+.sdl-cm[data-hover="rollup"] .sdl-cm__link:hover .sdl-cm__icon{ color: var(--sdlcm-hover-text); }
+
+/* per-character variant — each letter gets its own delay */
+.sdl-cm__char{
+  display: inline-block;
+  white-space: pre;
+  transition: transform .42s var(--sdlcm-hover-ease);
+  transition-delay: calc(var(--i) * .022s);
+}
+.sdl-cm[data-hover="charRoll"] .sdl-cm__roll-b{ color: var(--sdlcm-hover-text); }
+.sdl-cm[data-hover="charRoll"] .sdl-cm__roll-b .sdl-cm__char{ transform: translateY(0); }
+.sdl-cm[data-hover="charRoll"] .sdl-cm__link:hover .sdl-cm__roll-a .sdl-cm__char{ transform: translateY(-100%); }
+.sdl-cm[data-hover="charRoll"] .sdl-cm__link:hover .sdl-cm__roll-b .sdl-cm__char{ transform: translateY(-100%); }
+.sdl-cm[data-hover="charRoll"] .sdl-cm__link:hover .sdl-cm__wipe{ transform: scaleY(1); }
+.sdl-cm[data-hover="charRoll"] .sdl-cm__link:hover .sdl-cm__icon{ color: var(--sdlcm-hover-text); }
+
+/* -- slide: label glides across, an arrow leads it ------------------------ */
+.sdl-cm__arrow{
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  align-self: center;
+  width: 0;
+  overflow: hidden;
+  opacity: 0;
+  color: var(--sdlcm-num);
+  transition: width .45s var(--sdlcm-hover-ease), opacity .3s ease;
+}
+.sdl-cm__arrow svg{ width: calc(var(--sdlcm-size) * .5); height: auto; display: block; }
+.sdl-cm[data-hover="slide"] .sdl-cm__link:hover .sdl-cm__arrow{
+  width: calc(var(--sdlcm-size) * .58);
+  opacity: 1;
+}
+.sdl-cm[data-hover="slide"] .sdl-cm__link:hover .sdl-cm__text{
+  transform: translateX(.14em);
+  color: var(--sdlcm-num);
+}
+
+/* -- underline: rule grows from the leading edge -------------------------- */
+.sdl-cm[data-hover="underline"] .sdl-cm__text::after{
+  content: '';
+  position: absolute;
+  left: 0; bottom: -.06em;
+  width: 100%;
+  height: max(2px, .045em);
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform .5s var(--sdlcm-hover-ease);
+}
+.sdl-cm[data-align="right"] .sdl-cm__text::after{ transform-origin: right center; }
+.sdl-cm[data-hover="underline"] .sdl-cm__link:hover .sdl-cm__text::after{ transform: scaleX(1); }
+.sdl-cm[data-hover="underline"] .sdl-cm__link:hover .sdl-cm__text{ color: var(--sdlcm-hover-bg); }
+
+/* -- fill: colour sweeps through the glyphs left→right -------------------- */
+.sdl-cm[data-hover="fill"] .sdl-cm__text{
+  background-image: linear-gradient(to right, var(--sdlcm-hover-bg) 50%, var(--sdlcm-text) 50%);
+  background-size: 200% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: background-position .6s var(--sdlcm-hover-ease);
+}
+.sdl-cm[data-hover="fill"] .sdl-cm__link:hover .sdl-cm__text{ background-position: 0 0; }
+
+/* -- outline: solid type hollows out -------------------------------------- */
+.sdl-cm[data-hover="outline"] .sdl-cm__text{
+  transition: color .45s var(--sdlcm-hover-ease),
+              -webkit-text-stroke-color .45s var(--sdlcm-hover-ease);
+  -webkit-text-stroke: max(1px, .014em) var(--sdlcm-text);
+}
+.sdl-cm[data-hover="outline"] .sdl-cm__link:hover .sdl-cm__text{ color: transparent; }
+
+/* --------------------------------------------------------------------------
+   7. Submenu (slide up / down)
+   -------------------------------------------------------------------------- */
+.sdl-cm__sub{
+  overflow: hidden;
+  height: 0;
+  opacity: 0;
+}
+.sdl-cm__sub-list{
+  list-style: none;
+  margin: 0;
+  padding: max(4px, calc(var(--sdlcm-link-pad-y) * .4)) 0
+           calc(var(--sdlcm-link-pad-y) * 1.2) var(--sdlcm-sub-indent);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sdlcm-sub-gap);
+}
+.sdl-cm[data-align="center"] .sdl-cm__sub-list{ padding-left: 0; align-items: center; }
+.sdl-cm[data-align="right"]  .sdl-cm__sub-list{ padding-left: 0; padding-right: var(--sdlcm-sub-indent); align-items: flex-end; }
+
+.sdl-cm__sub-link{
+  position: relative;
+  display: inline-block;
+  font-family: var(--sdlcm-font);
+  font-size: var(--sdlcm-sub-size);
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: 0;
+  color: var(--sdlcm-sub-color);
+  text-decoration: none;
+  opacity: .78;
+  transition: opacity .3s ease, transform .4s var(--sdlcm-hover-ease);
+  will-change: transform;
+}
+.sdl-cm__sub-link::after{
+  content: '';
+  position: absolute;
+  left: 0; bottom: -.12em;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform .4s var(--sdlcm-hover-ease);
+}
+.sdl-cm__sub-link:hover{ opacity: 1; transform: translateX(.25em); }
+.sdl-cm__sub-link:hover::after{ transform: scaleX(1); }
+.sdl-cm[data-align="center"] .sdl-cm__sub-link:hover,
+.sdl-cm[data-align="right"]  .sdl-cm__sub-link:hover{ transform: none; }
+
+/* --------------------------------------------------------------------------
+   8. Footer block
+   -------------------------------------------------------------------------- */
+.sdl-cm__foot{
+  margin-top: auto;
+  padding-top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: var(--sdlcm-text);
+}
+.sdl-cm__foot-text{
+  font-size: max(13px, calc(var(--sdlcm-sub-size) * .8));
+  line-height: 1.5;
+  opacity: .7;
+  margin: 0;
+}
+.sdl-cm__foot-links{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+.sdl-cm[data-align="center"] .sdl-cm__foot-links{ justify-content: center; }
+.sdl-cm[data-align="right"]  .sdl-cm__foot-links{ justify-content: flex-end; }
+.sdl-cm__foot-link{
+  font-size: max(13px, calc(var(--sdlcm-sub-size) * .8));
+  color: var(--sdlcm-text);
+  text-decoration: none;
+  position: relative;
+  opacity: .8;
+  transition: opacity .3s ease;
+}
+.sdl-cm__foot-link::after{
+  content: '';
+  position: absolute;
+  left: 0; bottom: -3px;
+  width: 100%; height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform .4s var(--sdlcm-hover-ease);
+}
+.sdl-cm__foot-link:hover{ opacity: 1; }
+.sdl-cm__foot-link:hover::after{ transform: scaleX(1); }
+
+.sdl-cm__socials{
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.sdl-cm[data-align="center"] .sdl-cm__socials{ justify-content: center; }
+.sdl-cm[data-align="right"]  .sdl-cm__socials{ justify-content: flex-end; }
+.sdl-cm__socials a{
+  width: 22px; height: 22px;
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  color: var(--sdlcm-text);
+  transition: transform .3s var(--sdlcm-hover-ease), opacity .3s ease;
+  opacity: .8;
+}
+.sdl-cm__socials a:hover{ transform: translateY(-3px); opacity: 1; }
+.sdl-cm__socials svg{ width: 100%; height: 100%; fill: currentColor; }
+.sdl-cm__socials img{ width: 100%; height: 100%; object-fit: contain; }
+
+/* Items that fade in on the tail of the timeline */
+.sdl-cm__fade{ will-change: transform, opacity; }
+
+/* --------------------------------------------------------------------------
+   9. Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 767px){
+  :root{
+    --sdlcm-size: var(--sdlcm-size-mobile, 34px);
+    --sdlcm-pad-top: 110px;
+    --sdlcm-pad-x: 7vw;
+  }
+  .sdl-cm__panel{
+    width: 100%;
+    max-width: none;
+  }
+  .sdl-cm__curtain{ border-radius: 0; }
+}
+
+/* --------------------------------------------------------------------------
+   10. Reduced motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce){
+  .sdl-cm *{
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   11. Never run inside the Squarespace editor
+   -------------------------------------------------------------------------- */
+body.sqs-edit-mode-active .sdl-cm,
+body.sqs-edit-mode .sdl-cm{ display: none !important; }
+body.sqs-edit-mode-active .header-display-desktop .header-nav,
+body.sqs-edit-mode .header-display-desktop .header-nav{ display: block !important; }
