@@ -175,11 +175,10 @@ html.sdl-cm-open .header-burger{
   line-height: 1;
   color: var(--sdlcm-close-color, var(--sdlcm-text));
   cursor: pointer;
+  /* GSAP owns opacity here — no CSS transition on it, or the two fight. */
   opacity: 0;
-  transition: opacity .3s ease;
 }
 .sdl-cm[data-side="left"] .sdl-cm__close{ right: auto; left: var(--sdlcm-pad-x); }
-.sdl-cm__close:hover{ opacity: .65; }
 .sdl-cm__close:focus-visible{ outline: 2px solid var(--sdlcm-num); outline-offset: 6px; }
 
 .sdl-cm__close-label{
@@ -270,6 +269,7 @@ html.sdl-cm-open .header-burger{
   width: 100%;
 }
 .sdl-cm__item{ position: relative; }
+.sdl-cm__item + .sdl-cm__item{ margin-top: var(--sdlcm-item-gap, 0px); }
 
 /* The mask that the entrance animation slides out of. Kept separate from
    the item so an expanded submenu is never clipped. */
@@ -501,6 +501,10 @@ html.sdl-cm-open .header-burger{
 .sdl-cm[data-align="center"] .sdl-cm__sub-list{ padding-left: 0; align-items: center; }
 .sdl-cm[data-align="right"]  .sdl-cm__sub-list{ padding-left: 0; padding-right: var(--sdlcm-sub-indent); align-items: flex-end; }
 
+/* GSAP staggers these wrappers on expand; the anchors inside keep their own
+   hover transitions so the two never animate the same property. */
+.sdl-cm__sub-item{ display: block; will-change: transform, opacity; }
+
 .sdl-cm__sub-link{
   position: relative;
   display: inline-block;
@@ -513,7 +517,6 @@ html.sdl-cm-open .header-burger{
   text-decoration: none;
   opacity: .78;
   transition: opacity .3s ease, transform .4s var(--sdlcm-hover-ease);
-  will-change: transform;
 }
 .sdl-cm__sub-link::after{
   content: '';
@@ -536,7 +539,7 @@ html.sdl-cm-open .header-burger{
    -------------------------------------------------------------------------- */
 .sdl-cm__foot{
   margin-top: auto;
-  padding-top: 40px;
+  padding-top: var(--sdlcm-footer-gap, 40px);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -614,11 +617,11 @@ html.sdl-cm-open .header-burger{
 @media (max-width: 767px){
   :root{
     --sdlcm-size: var(--sdlcm-size-mobile, 34px);
-    --sdlcm-pad-top: 110px;
-    --sdlcm-pad-x: 7vw;
+    --sdlcm-pad-top: var(--sdlcm-pad-top-mobile, 110px);
+    --sdlcm-pad-x: var(--sdlcm-pad-x-mobile, 7vw);
   }
   .sdl-cm__panel{
-    width: 100%;
+    width: var(--sdlcm-width-mobile, 100%);
     max-width: none;
   }
   .sdl-cm__scroll{ padding-bottom: max(48px, env(safe-area-inset-bottom)); }

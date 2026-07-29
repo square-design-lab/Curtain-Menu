@@ -35,6 +35,11 @@
     padX: '5vw',
     padTop: 140,
     padBottom: 48,
+    widthMobile: '100%',
+    padXMobile: '7vw',
+    padTopMobile: 110,
+    itemGap: 0,               // extra space between top-level rows
+    footerGap: 40,            // space above the footer block
 
     /* curtains — the last colour is the resting menu background */
     curtains: ['#FF4C24', '#FFFFFF', '#E3E1DE'],
@@ -452,7 +457,7 @@
       var sub = el('div', 'sdl-cm__sub');
       var ul = el('ul', 'sdl-cm__sub-list');
       data.children.forEach(function (child) {
-        var cli = el('li');
+        var cli = el('li', 'sdl-cm__sub-item');
         var ca = el('a', 'sdl-cm__sub-link' + (child.active ? ' is-active' : ''), { href: child.href });
         if (child.target) ca.setAttribute('target', child.target);
         ca.textContent = child.label;
@@ -623,6 +628,11 @@
     s.setProperty('--sdlcm-pad-x', unit(cfg.padX, '5vw'));
     s.setProperty('--sdlcm-pad-top', unit(cfg.padTop, '140px'));
     s.setProperty('--sdlcm-pad-bottom', unit(cfg.padBottom, '48px'));
+    s.setProperty('--sdlcm-width-mobile', unit(cfg.widthMobile, '100%'));
+    s.setProperty('--sdlcm-pad-x-mobile', unit(cfg.padXMobile, '7vw'));
+    s.setProperty('--sdlcm-pad-top-mobile', unit(cfg.padTopMobile, '110px'));
+    s.setProperty('--sdlcm-item-gap', unit(cfg.itemGap, '0px'));
+    s.setProperty('--sdlcm-footer-gap', unit(cfg.footerGap, '40px'));
 
     s.setProperty('--sdlcm-overlay', hexToRgba(cfg.scrimColor, cfg.scrimOpacity));
     s.setProperty('--sdlcm-bg', last);
@@ -838,7 +848,7 @@
         ease: ease,
         overwrite: true
       });
-      gsap.fromTo(sub.querySelectorAll('.sdl-cm__sub-link'),
+      gsap.fromTo(sub.querySelectorAll('.sdl-cm__sub-item'),
         { yPercent: 60, autoAlpha: 0 },
         {
           yPercent: 0,
