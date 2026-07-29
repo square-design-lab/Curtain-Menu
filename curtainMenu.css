@@ -50,22 +50,25 @@
 html.sdl-cm-desktop .header-display-desktop .header-burger{
   display: flex !important;
   align-items: center;
+  /* Squarespace's header load animation leaves preFade elements at opacity 0
+     when they start out display:none — undo that. */
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
 }
 html.sdl-cm-desktop .header-display-desktop .header-nav{
   display: none !important;
 }
-/* Some header layouts park the nav in the title wrapper — collapse the gap. */
-html.sdl-cm-desktop .header-display-desktop .header-title-nav-wrapper{
-  flex: 0 1 auto;
-}
 
-/* Burger on the left of the header */
+/* Burger pinned to the far right of the header */
+html.sdl-cm-desktop.sdl-cm-burger-right .header-display-desktop .header-burger{
+  order: 99;
+  margin-left: auto;
+}
+/* Burger pinned to the far left */
 html.sdl-cm-desktop.sdl-cm-burger-left .header-display-desktop .header-burger{
   order: -1;
-  margin-right: auto;
-}
-html.sdl-cm-desktop.sdl-cm-burger-left .header-display-desktop .header-title-nav-wrapper{
-  order: 0;
+  margin-right: 24px;
 }
 
 /* The plugin owns the overlay — never let Squarespace's own menu appear. */

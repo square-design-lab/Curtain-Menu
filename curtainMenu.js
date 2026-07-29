@@ -25,7 +25,7 @@
     desktopBurger: true,      // show the burger + hide the inline nav on desktop
     desktopMinWidth: 768,     // px — take over at or above this width
     takeOverMobile: true,     // also replace the native menu below that width
-    burgerAlign: 'default',   // default | left
+    burgerAlign: 'default',   // default | right | left
 
     /* panel */
     side: 'right',            // right | left | full
@@ -495,7 +495,8 @@
 
     var html = document.documentElement;
     html.classList.add('sdl-cm-active');
-    if (cfg.burgerAlign === 'left') html.classList.add('sdl-cm-burger-left');
+    if (cfg.burgerAlign === 'left')  html.classList.add('sdl-cm-burger-left');
+    if (cfg.burgerAlign === 'right') html.classList.add('sdl-cm-burger-right');
 
     var scrim   = root.querySelector('.sdl-cm__scrim');
     var panel   = root.querySelector('.sdl-cm__panel');
