@@ -51,16 +51,17 @@
     linkEntrance: 'riseRotate', // riseRotate | rise | fade | blur | scale
     fadeStagger: 0.04,
 
-    /* type */
+    /* type — 'auto' samples the live site header so the menu matches it */
     align: 'left',            // left | center | right
-    fontFamily: '',           // '' inherits the site's heading font
+    fontSource: 'headerNav',  // headerNav | siteHeading | custom
+    fontFamily: 'auto',       // 'auto' = take it from fontSource
     fontSize: 64,
     fontSizeMobile: 34,
     fontWeight: 700,
     letterSpacing: -0.02,
     lineHeight: 1.02,
     textTransform: 'uppercase',
-    textColor: '#131313',
+    textColor: 'auto',        // 'auto' = take the header nav's colour
     linkPaddingY: 10,
 
     /* hover */
@@ -86,7 +87,7 @@
     submenuIcon: 'plus',      // plus | chevron | caret | arrow
     submenuIconPosition: 'inline', // inline | edge
     submenuFontSize: 20,
-    submenuColor: '#131313',
+    submenuColor: 'auto',
     submenuIndent: 24,
     submenuDuration: 0.5,
     submenuAutoClose: true,
@@ -145,6 +146,44 @@
     return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + alpha + ')';
   }
 
+  /* --- colour maths, used to keep sampled colours legible ----------------- */
+  function toRgb(c) {
+    c = String(c || '').trim();
+    var m = c.match(/^rgba?\(([^)]+)\)$/i);
+    if (m) {
+      var p = m[1].split(',').map(parseFloat);
+      return { r: p[0], g: p[1], b: p[2] };
+    }
+    var h = c.replace('#', '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    var n = parseInt(h, 16);
+    if (isNaN(n) || h.length !== 6) return null;
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  }
+
+  function luminance(c) {
+    var rgb = toRgb(c);
+    if (!rgb) return 0;
+    var v = ['r', 'g', 'b'].map(function (k) {
+      var x = rgb[k] / 255;
+      return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+  }
+
+  function contrast(a, b) {
+    var la = luminance(a), lb = luminance(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  }
+
+  /* Header colours are sampled against the header's own background, which is
+     rarely the menu's. Fall back to plain black/white when they clash. */
+  function legible(fg, bg) {
+    if (!toRgb(fg)) return null;
+    if (contrast(fg, bg) >= 3) return fg;
+    return luminance(bg) > 0.45 ? '#131313' : '#FFFFFF';
+  }
+
   /* A cubic-bezier timing function, so the CustomEase plugin isn't needed. */
   function bezier(p1x, p1y, p2x, p2y) {
     function A(a, b) { return 1 - 3 * b + 3 * a; }
@@ -165,12 +204,51 @@
     };
   }
 
+  /* ------------------------------------------------------------------------
+     Editor detection
+
+     Squarespace renders the site inside an iframe while you edit, so the
+     iframe check is the reliable signal — the edit-mode classes land on the
+     body only after the editor finishes booting.
+     ------------------------------------------------------------------------ */
   function inEditor() {
-    var b = document.body;
-    return !!(b && (b.classList.contains('sqs-edit-mode') ||
-                    b.classList.contains('sqs-edit-mode-active') ||
-                    document.querySelector('.sqs-editing-overlay'))) ||
-           /\/config\b/.test(location.pathname);
+    var b = document.body, d = document.documentElement;
+
+    if (/\/config(\/|$)/.test(location.pathname)) return true;
+    if (location.search.indexOf('isEditingPage') > -1) return true;
+
+    if (b && (b.classList.contains('sqs-edit-mode') ||
+              b.classList.contains('sqs-edit-mode-active'))) return true;
+    if (d && d.classList.contains('sqs-edit-mode')) return true;
+    if (document.querySelector('.sqs-editing-overlay, .sqs-block-editor')) return true;
+
+    /* Any iframe embedding — the editor, and previews generally. */
+    try { if (window.self !== window.top) return true; }
+    catch (e) { return true; }   /* cross-origin frame → treat as editor */
+
+    return false;
+  }
+
+  /* Sample the live header so the menu inherits the site's own typography. */
+  function sampleHeader() {
+    var navLink = document.querySelector('.header-nav-item a') ||
+                  document.querySelector('.header-nav-folder-title') ||
+                  document.querySelector('.header-menu-nav-item a') ||
+                  document.querySelector('.header-title-text a');
+    var heading = document.querySelector('h1, h2, .sqsrte-large');
+
+    var out = { font: '', headingFont: '', color: '', weight: '', tracking: '' };
+
+    if (navLink) {
+      var cs = getComputedStyle(navLink);
+      out.font = cs.fontFamily;
+      out.color = cs.color;
+      out.weight = cs.fontWeight;
+      out.tracking = cs.letterSpacing;
+    }
+    if (heading) out.headingFont = getComputedStyle(heading).fontFamily;
+
+    return out;
   }
 
   /* ------------------------------------------------------------------------
@@ -524,6 +602,20 @@
   function applyVars() {
     var s = document.documentElement.style;
     var last = (cfg.curtains && cfg.curtains.length) ? cfg.curtains[cfg.curtains.length - 1] : '#E3E1DE';
+    var site = sampleHeader();
+
+    /* Resolve the 'auto' sentinels against the live header. */
+    var font = cfg.fontFamily;
+    if (font === 'auto' || font === '') {
+      font = cfg.fontSource === 'siteHeading'
+        ? (site.headingFont || site.font)
+        : (site.font || site.headingFont);
+    }
+    var textColor = cfg.textColor;
+    if (textColor === 'auto') {
+      textColor = legible(site.color, last) || '#131313';
+    }
+    var subColor  = cfg.submenuColor === 'auto' ? textColor : cfg.submenuColor;
 
     s.setProperty('--sdlcm-width', unit(cfg.width, '46vw'));
     s.setProperty('--sdlcm-max-width', unit(cfg.maxWidth, '720px'));
@@ -535,12 +627,12 @@
     s.setProperty('--sdlcm-overlay', hexToRgba(cfg.scrimColor, cfg.scrimOpacity));
     s.setProperty('--sdlcm-bg', last);
 
-    s.setProperty('--sdlcm-text', cfg.textColor);
+    s.setProperty('--sdlcm-text', textColor);
     s.setProperty('--sdlcm-hover-text', cfg.hoverTextColor);
     s.setProperty('--sdlcm-hover-bg', cfg.hoverBgColor);
     s.setProperty('--sdlcm-num', cfg.numberColor);
 
-    if (cfg.fontFamily) s.setProperty('--sdlcm-font', cfg.fontFamily);
+    if (font) s.setProperty('--sdlcm-font', font);
     s.setProperty('--sdlcm-size', unit(cfg.fontSize, '64px'));
     s.setProperty('--sdlcm-size-mobile', unit(cfg.fontSizeMobile, '34px'));
     s.setProperty('--sdlcm-weight', cfg.fontWeight);
@@ -550,7 +642,7 @@
     s.setProperty('--sdlcm-link-pad-y', unit(cfg.linkPaddingY, '10px'));
 
     s.setProperty('--sdlcm-sub-size', unit(cfg.submenuFontSize, '20px'));
-    s.setProperty('--sdlcm-sub-color', cfg.submenuColor);
+    s.setProperty('--sdlcm-sub-color', subColor);
     s.setProperty('--sdlcm-sub-indent', unit(cfg.submenuIndent, '24px'));
   }
 
@@ -611,7 +703,16 @@
 
     gsap.defaults({ ease: ease, duration: cfg.duration });
 
-    var tl = gsap.timeline();
+    /* A completed GSAP timeline gets dropped from the ticker, so reusing one
+       across open/close silently stops animating. Build a fresh one each
+       time and kill the previous so an interrupted transition stays where
+       it was rather than snapping. */
+    var tl = null;
+    function newTimeline() {
+      if (tl) tl.kill();
+      tl = gsap.timeline();
+      return tl;
+    }
     var isOpen = false;
 
     /* --- breakpoint handling -------------------------------------------- */
@@ -659,7 +760,7 @@
       var from = entranceFrom(), to = entranceTo();
       to = merge(to, { stagger: cfg.linkStagger });
 
-      tl.clear()
+      newTimeline()
         .set(root, { display: 'block' })
         .set(panel, { xPercent: 0 }, '<')
         .fromTo(scrim, { autoAlpha: 0 }, { autoAlpha: 1 }, '<')
@@ -690,7 +791,7 @@
       burgerBtn.setAttribute('aria-expanded', 'false');
       closeAllFolders(true);
 
-      tl.clear()
+      newTimeline()
         .to(scrim, { autoAlpha: 0 })
         .to(panel, { xPercent: 120 * outSign }, '<')
         .set(root, { display: 'none' })
@@ -809,11 +910,43 @@
       rAF = requestAnimationFrame(syncBreakpoint);
     });
 
+    /* If the site owner switches into edit mode without a reload, stand down
+       completely so Squarespace's own header is editable again. */
+    function teardown() {
+      if (tl) tl.kill();
+      html.classList.remove('sdl-cm-active', 'sdl-cm-desktop', 'sdl-cm-open',
+                            'sdl-cm-locked', 'sdl-cm-burger-left',
+                            'sdl-cm-burger-right', 'sdl-cm-hide-actions',
+                            'sdl-cm-hide-cart');
+      burgerBtn.classList.remove('burger--active');
+      burgerBtn.removeAttribute('aria-expanded');
+      if (root.parentNode) root.parentNode.removeChild(root);
+      editorWatch.disconnect();
+      window.SDL_CURTAIN_MENU = null;
+    }
+
+    var editorWatch = new MutationObserver(function () {
+      if (inEditor()) teardown();
+    });
+    editorWatch.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+      subtree: false
+    });
+    editorWatch.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class'],
+      subtree: false
+    });
+
     syncBreakpoint();
     burgerBtn.setAttribute('aria-expanded', 'false');
 
     /* Public handle for debugging / other plugins */
-    window.SDL_CURTAIN_MENU = { open: open, close: close, toggle: toggle, config: cfg, root: root };
+    window.SDL_CURTAIN_MENU = {
+      open: open, close: close, toggle: toggle,
+      destroy: teardown, config: cfg, root: root
+    };
   }
 
   function boot() {
