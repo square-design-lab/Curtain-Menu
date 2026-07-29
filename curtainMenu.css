@@ -336,7 +336,10 @@ html.sdl-cm-open .header-burger{
   flex: 0 0 auto;
 }
 .sdl-cm__num--before{ order: -1; }
-.sdl-cm__link--folder .sdl-cm__num{ margin-right: auto; }
+/* When the toggle is pinned to the panel edge, the number stays with the label */
+.sdl-cm[data-icon-pos="edge"][data-align="left"] .sdl-cm__link--folder .sdl-cm__num{
+  margin-right: auto;
+}
 
 /* Folder toggle icon */
 .sdl-cm__icon{
