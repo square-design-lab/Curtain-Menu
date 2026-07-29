@@ -219,6 +219,10 @@
   function inEditor() {
     var b = document.body, d = document.documentElement;
 
+    /* The config generator runs the real plugin inside a sandboxed iframe and
+       sets this flag, which would otherwise trip the iframe check below. */
+    if (window.SDL_CURTAIN_MENU_PREVIEW === true) return false;
+
     if (/\/config(\/|$)/.test(location.pathname)) return true;
     if (location.search.indexOf('isEditingPage') > -1) return true;
 
