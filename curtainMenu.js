@@ -253,15 +253,34 @@
     return items;
   }
 
+  /* Squarespace parks social icons in different wrappers depending on header
+     layout and version — take the first candidate that actually has links. */
   function readSocials() {
-    var box = document.querySelector('.header-menu-actions .social-accounts') ||
-              document.querySelector('.header-actions .social-accounts') ||
-              document.querySelector('#footer-sections .sqs-svg-icon--list') ||
-              document.querySelector('.sqs-svg-icon--list');
-    if (!box) return null;
-    var clone = box.cloneNode(true);
-    Array.prototype.forEach.call(clone.querySelectorAll('[id]'), function (n) { n.removeAttribute('id'); });
-    return clone;
+    var candidates = [
+      '.header-actions-action--social',
+      '.header-menu-actions .social-accounts',
+      '.header-actions .social-accounts',
+      '.header-menu-actions-action--social',
+      '#footer-sections .sqs-svg-icon--list',
+      '.sqs-svg-icon--list'
+    ];
+
+    for (var i = 0; i < candidates.length; i++) {
+      var box = document.querySelector(candidates[i]);
+      if (!box || !box.querySelectorAll('a').length) continue;
+
+      var clone = box.cloneNode(true);
+      Array.prototype.forEach.call(clone.querySelectorAll('[id]'), function (n) {
+        n.removeAttribute('id');
+      });
+      /* Drop Squarespace's own sizing/colour classes so our styles win. */
+      Array.prototype.forEach.call(clone.querySelectorAll('a'), function (a) {
+        a.className = 'sdl-cm__social';
+      });
+      clone.className = 'sdl-cm__socials-inner';
+      return clone;
+    }
+    return null;
   }
 
   /* ------------------------------------------------------------------------
