@@ -504,13 +504,16 @@
     var closeBtn = buildCloseButton();
     if (closeBtn) panel.appendChild(closeBtn);
 
+    var scroll = el('div', 'sdl-cm__scroll');
+
     var list = el('ul', 'sdl-cm__list');
     items.forEach(function (d, i) { list.appendChild(buildItem(d, i)); });
-    panel.appendChild(list);
+    scroll.appendChild(list);
 
     var foot = buildFooter();
-    if (foot) panel.appendChild(foot);
+    if (foot) scroll.appendChild(foot);
 
+    panel.appendChild(scroll);
     root.appendChild(panel);
     return root;
   }
@@ -593,6 +596,7 @@
     var links    = root.querySelectorAll('.sdl-cm__link');
     var fades    = root.querySelectorAll('[data-cm-fade]');
     var closeBtn = root.querySelector('.sdl-cm__close');
+    var scroller = root.querySelector('.sdl-cm__scroll');
 
     if (cfg.submenuIconPosition === 'edge') root.setAttribute('data-icon-pos', 'edge');
     if (cfg.closeColor) root.style.setProperty('--sdlcm-close-color', cfg.closeColor);
@@ -650,6 +654,7 @@
       if (cfg.lockScroll) html.classList.add('sdl-cm-locked');
       burgerBtn.classList.add('burger--active');
       burgerBtn.setAttribute('aria-expanded', 'true');
+      if (scroller) scroller.scrollTop = 0;
 
       var from = entranceFrom(), to = entranceTo();
       to = merge(to, { stagger: cfg.linkStagger });
