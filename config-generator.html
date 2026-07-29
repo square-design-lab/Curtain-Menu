@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Curtain Menu — Config Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-body:#F5F5F7; --bg-sidebar:#FFFFFF;
+  --text-main:#1C1C1E; --text-secondary:#666; --text-tertiary:#999;
+  --border-light:#E5E5E5; --border-hover:#D4D4D4; --border-active:#18181B;
+  --accent:#18181B; --accent-hover:#09090B; --accent-contrast:#fff;
+  --radius-sm:6px; --radius-md:8px; --radius-lg:12px;
+  --sidebar-width:390px; --header-height:60px;
+}
+*{box-sizing:border-box;outline:none}
+body{font-family:'Inter',sans-serif;background:var(--bg-body);color:var(--text-main);
+  margin:0;height:100vh;display:flex;overflow:hidden;font-size:13px;-webkit-font-smoothing:antialiased}
+
+/* ---------- sidebar ---------- */
+.sidebar{width:var(--sidebar-width);background:var(--bg-sidebar);border-right:1px solid var(--border-light);
+  display:flex;flex-direction:column;z-index:20}
+.sidebar-header{height:var(--header-height);padding:0 20px;border-bottom:1px solid var(--border-light);
+  display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.85);backdrop-filter:blur(10px);flex-shrink:0}
+.sidebar-header h2{font-size:15px;font-weight:700;margin:0;display:flex;align-items:center;gap:10px;letter-spacing:-.02em}
+.brand-icon{width:30px;height:30px;background:var(--accent);color:#fff;border-radius:8px;
+  display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.sidebar-header .badge{font-size:10px;background:#F4F4F5;padding:2px 7px;border-radius:4px;color:#52525B;font-weight:600;border:1px solid #D4D4D8}
+.ghost-btn{border:1px solid var(--border-light);background:#fff;color:var(--text-secondary);font-family:inherit;
+  font-size:11.5px;font-weight:500;padding:6px 11px;border-radius:6px;cursor:pointer;transition:.15s}
+.ghost-btn:hover{border-color:var(--border-hover);color:var(--text-main)}
+.sidebar-content{flex:1;overflow-y:auto;padding:20px}
+.sidebar-content::-webkit-scrollbar{width:6px}
+.sidebar-content::-webkit-scrollbar-thumb{background:#E5E5E5;border-radius:3px}
+.group{margin-bottom:20px;border-bottom:1px solid #F1F1F2;padding-bottom:4px}
+.group:last-child{border-bottom:none}
+.group-header{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);
+  margin-bottom:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:color .2s;user-select:none}
+.group-header:hover{color:var(--text-main)}
+.group-header::after{content:'';width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;
+  transform:rotate(45deg);transition:transform .2s;margin-right:4px}
+.group.open .group-header::after{transform:rotate(-135deg)}
+.group-body{display:none;padding-bottom:14px}
+.group.open .group-body{display:block;animation:slideIn .2s ease-out}
+@keyframes slideIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.control-row{margin-bottom:14px}
+label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--text-main)}
+.helper-text{font-size:11px;color:var(--text-secondary);margin-top:6px;line-height:1.45}
+input[type=text],input[type=number],select{width:100%;height:36px;padding:0 10px;font-family:inherit;font-size:13px;
+  border:1px solid var(--border-light);border-radius:var(--radius-sm);background:#fff;color:var(--text-main);transition:all .15s;appearance:none}
+input:hover,select:hover{border-color:var(--border-hover)}
+input:focus,select:focus{border-color:var(--border-active);box-shadow:0 0 0 3px rgba(0,0,0,.08)}
+select{background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat:no-repeat;background-position:right 8px center;background-size:14px;padding-right:30px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;min-height:24px;gap:12px}
+.toggle-row label{margin:0;font-weight:400;color:var(--text-secondary)}
+input[type=checkbox]{appearance:none;width:36px;height:20px;background:#E5E5E5;border-radius:20px;position:relative;cursor:pointer;transition:.2s;border:none;flex:0 0 auto}
+input[type=checkbox]::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;
+  box-shadow:0 1px 2px rgba(0,0,0,.2);transition:.2s cubic-bezier(.4,0,.2,1)}
+input[type=checkbox]:checked{background:var(--accent)}
+input[type=checkbox]:checked::after{transform:translateX(16px)}
+.color-row{display:flex;flex-direction:column;gap:9px;background:#FAFAFA;padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-light)}
+.color-chip{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.color-chip .color-label{font-size:12px;font-weight:500}
+.color-ctl{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+input[type=color]{width:28px;height:28px;padding:0;border:1.5px solid #B8B8B8;border-radius:50%;overflow:hidden;cursor:pointer;background:none;flex:0 0 auto}
+input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+input[type=color]::-webkit-color-swatch{border:none;border-radius:50%}
+.mini-toggle{font-size:10.5px;color:var(--text-tertiary);display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
+.mini-toggle input{appearance:none;width:26px;height:15px;background:#E0E0E0;border-radius:15px;position:relative;cursor:pointer;transition:.2s}
+.mini-toggle input::after{content:'';position:absolute;top:2px;left:2px;width:11px;height:11px;background:#fff;border-radius:50%;transition:.2s}
+.mini-toggle input:checked{background:var(--accent)}
+.mini-toggle input:checked::after{transform:translateX(11px)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid2 label{font-size:12px}
+.seg{display:flex;background:#F2F2F2;padding:2px;border-radius:7px;gap:2px}
+.seg button{flex:1;border:none;background:transparent;padding:7px 4px;font-size:12px;font-weight:500;font-family:inherit;
+  color:var(--text-secondary);cursor:pointer;border-radius:5px;transition:.15s}
+.seg button.active{background:#fff;color:var(--text-main);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.note{background:#FAFAFA;border:1px solid var(--border-light);border-radius:var(--radius-md);padding:12px;
+  font-size:11.5px;line-height:1.55;color:var(--text-secondary)}
+.note b{color:var(--text-main)}
+.note ol{margin:8px 0 0;padding-left:18px}
+.note li{margin-bottom:5px}
+.subgroup{border:1px solid var(--border-light);border-radius:var(--radius-md);padding:12px;margin-bottom:14px;background:#FCFCFD}
+.subgroup-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);margin-bottom:10px}
+
+/* option picker grid */
+.layout-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px}
+.layout-grid.cols3{grid-template-columns:repeat(3,1fr)}
+.layout-opt{border:1.5px solid var(--border-light);background:#fff;border-radius:8px;padding:7px 4px 6px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:5px;transition:.15s;font-family:inherit}
+.layout-opt:hover{border-color:var(--border-hover)}
+.layout-opt.active{border-color:var(--accent);box-shadow:0 0 0 2.5px rgba(24,24,27,.09)}
+.layout-opt svg{display:block}
+.layout-opt span{font-size:9.5px;font-weight:500;color:var(--text-secondary);line-height:1.15;text-align:center}
+.layout-opt.active span{color:var(--text-main)}
+
+/* curtain list */
+.curtain-item{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.curtain-item .idx{font-size:10px;font-weight:600;color:var(--text-tertiary);width:52px;flex:0 0 auto}
+.curtain-item input[type=text]{height:32px;font-family:'JetBrains Mono',monospace;font-size:11.5px}
+.icon-btn{width:28px;height:28px;flex:0 0 auto;border:1px solid var(--border-light);background:#fff;border-radius:6px;
+  cursor:pointer;color:var(--text-tertiary);display:inline-flex;align-items:center;justify-content:center;transition:.15s}
+.icon-btn:hover{border-color:#EF4444;color:#EF4444}
+.icon-btn:disabled{opacity:.35;cursor:not-allowed}
+.add-btn{width:100%;border:1px dashed var(--border-hover);background:#fff;color:var(--text-secondary);font-family:inherit;
+  font-size:12px;font-weight:500;padding:8px;border-radius:6px;cursor:pointer;transition:.15s}
+.add-btn:hover{border-color:var(--accent);color:var(--text-main)}
+.add-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ---------- main ---------- */
+.main-content{flex:1;display:flex;flex-direction:column;background:#F5F5F7;position:relative;min-width:0}
+.topbar{height:var(--header-height);padding:0 24px;border-bottom:1px solid var(--border-light);background:#fff;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-shrink:0}
+.device-toggle{background:#F2F2F2;padding:2px;border-radius:6px;display:flex}
+.device-toggle button{border:none;background:transparent;padding:6px 12px;font-size:12px;font-weight:500;font-family:inherit;
+  color:var(--text-secondary);cursor:pointer;border-radius:4px;transition:.2s}
+.device-toggle button.active{background:#fff;color:var(--text-main);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.topbar-title{font-size:12px;color:var(--text-tertiary);font-weight:500;flex:1}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.copy-btn{background:var(--accent);color:var(--accent-contrast);border:none;font-family:inherit;font-size:12.5px;font-weight:600;
+  padding:9px 16px;border-radius:7px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+.copy-btn:hover{background:var(--accent-hover)}
+.copy-btn.done{background:#16A34A}
+
+.preview-area{flex:1;overflow:auto;padding:26px;display:flex;justify-content:center;align-items:flex-start}
+.device-frame{background:#fff;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.10);overflow:hidden;
+  width:100%;max-width:1180px;transition:max-width .3s ease;position:relative}
+.device-frame.mobile{max-width:414px}
+.device-frame iframe{width:100%;height:660px;border:0;display:block;background:#fff}
+
+/* code panel */
+.code-panel{border-top:1px solid var(--border-light);background:#0D0D0F;color:#E4E4E7;flex:0 0 auto;display:flex;flex-direction:column;
+  max-height:0;overflow:hidden;transition:max-height .25s ease}
+.code-panel.open{max-height:340px}
+.code-head{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid #232327;flex-shrink:0}
+.code-head span{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8B8B93}
+.code-body{overflow:auto;padding:16px 20px;margin:0;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.65;white-space:pre}
+.code-body::-webkit-scrollbar{width:8px;height:8px}
+.code-body::-webkit-scrollbar-thumb{background:#2E2E33;border-radius:4px}
+.hidden{display:none !important}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h2>
+      <span class="brand-icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M4 6h16M4 12h16M4 18h10"/>
+        </svg>
+      </span>
+      Curtain Menu
+      <span class="badge">v1.0</span>
+    </h2>
+    <button class="ghost-btn" id="resetBtn">Reset</button>
+  </div>
+
+  <div class="sidebar-content" id="controls"></div>
+</aside>
+
+<main class="main-content">
+  <div class="topbar">
+    <div class="device-toggle">
+      <button data-device="desktop" class="active">Desktop</button>
+      <button data-device="mobile">Mobile</button>
+    </div>
+    <div class="topbar-title" id="previewNote">Click the burger in the preview to open the menu</div>
+    <div class="topbar-right">
+      <button class="ghost-btn" id="replayBtn">Replay</button>
+      <button class="ghost-btn" id="codeToggle">Show code</button>
+      <button class="copy-btn" id="copyBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+        Copy code
+      </button>
+    </div>
+  </div>
+
+  <div class="preview-area">
+    <div class="device-frame" id="deviceFrame">
+      <iframe id="previewFrame" title="Menu preview"></iframe>
+    </div>
+  </div>
+
+  <div class="code-panel" id="codePanel">
+    <div class="code-head">
+      <span>Paste into Settings → Advanced → Code Injection → Footer</span>
+      <button class="ghost-btn" id="codeClose">Close</button>
+    </div>
+    <pre class="code-body" id="codeOut"></pre>
+  </div>
+</main>
+
+<script>
+/* =========================================================================
+   Config model
+   ========================================================================= */
+const CDN = 'https://cdn.jsdelivr.net/gh/square-design-lab/Curtain-Menu@v1.0.0';
+
+const DEFAULTS = {
+  desktopBurger:true, desktopMinWidth:768, takeOverMobile:true, burgerAlign:'default',
+  keepHeaderActions:true, keepHeaderCart:true,
+
+  side:'right', width:'46vw', maxWidth:720, radius:28,
+  padX:'5vw', padTop:140, padBottom:48,
+  widthMobile:'100%', padXMobile:'7vw', padTopMobile:110,
+  itemGap:0, footerGap:40,
+
+  curtains:['#FF4C24','#FFFFFF','#E3E1DE'],
+  scrimColor:'#131313', scrimOpacity:0.4,
+
+  duration:0.7, curtainStagger:0.12, curtainDuration:0.575,
+  linkStagger:0.05, linkDelay:0.35, linkEntrance:'riseRotate', fadeStagger:0.04,
+
+  align:'left', fontSource:'headerNav', fontFamily:'auto',
+  fontSize:64, fontSizeMobile:34, fontWeight:700,
+  letterSpacing:-0.02, lineHeight:1.02, textTransform:'uppercase',
+  textColor:'auto', linkPaddingY:10,
+
+  hoverEffect:'wipe', hoverTextColor:'#FFFFFF', hoverBgColor:'#131313',
+
+  showNumbers:true, numberColor:'#FF4C24', numberFormat:'pad', numberPosition:'after',
+
+  closeButton:true, closeStyle:'text', closeLabel:'Close', closeSize:26, closeColor:'',
+
+  submenuEnabled:true, submenuIcon:'plus', submenuIconPosition:'inline',
+  submenuFontSize:20, submenuColor:'auto', submenuIndent:24,
+  submenuDuration:0.5, submenuAutoClose:true, submenuLinkStagger:0.035,
+
+  showSocials:true, showHeaderButton:true, footerText:'', footerLinks:[],
+
+  closeOnEsc:true, closeOnLinkClick:true, closeOnScrim:true, lockScroll:true
+};
+
+let cfg = structuredClone(DEFAULTS);
+
+/* =========================================================================
+   Control builders
+   ========================================================================= */
+const $ = (s, r=document) => r.querySelector(s);
+const h = (html) => { const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content.firstElementChild; };
+
+function group(title, open, body){
+  const g = h(`<div class="group${open?' open':''}">
+    <div class="group-header">${title}</div>
+    <div class="group-body"></div>
+  </div>`);
+  g.querySelector('.group-header').addEventListener('click', ()=>g.classList.toggle('open'));
+  body(g.querySelector('.group-body'));
+  return g;
+}
+
+function row(label, control, helper){
+  const r = h(`<div class="control-row"></div>`);
+  if (label) r.appendChild(h(`<label>${label}</label>`));
+  r.appendChild(control);
+  if (helper) r.appendChild(h(`<div class="helper-text">${helper}</div>`));
+  return r;
+}
+
+function toggle(label, key, onChange){
+  const t = h(`<div class="toggle-row"><label>${label}</label><input type="checkbox" ${cfg[key]?'checked':''}></div>`);
+  t.querySelector('input').addEventListener('change', e=>{ cfg[key]=e.target.checked; (onChange||render)(); });
+  return t;
+}
+
+function number(label, key, min, max, step, helper){
+  const c = h(`<input type="number" value="${cfg[key]}" min="${min}" max="${max}" step="${step||1}">`);
+  c.addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){cfg[key]=v; refresh();} });
+  return row(label, c, helper);
+}
+
+function text(label, key, placeholder, helper){
+  const c = h(`<input type="text" value="${cfg[key]??''}" placeholder="${placeholder||''}">`);
+  c.addEventListener('input', e=>{ cfg[key]=e.target.value; refresh(); });
+  return row(label, c, helper);
+}
+
+function select(label, key, options, helper){
+  const c = h(`<select>${options.map(o=>`<option value="${o[0]}" ${cfg[key]===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>`);
+  c.addEventListener('change', e=>{ cfg[key]=e.target.value; render(); });
+  return row(label, c, helper);
+}
+
+function seg(label, key, options, helper){
+  const c = h(`<div class="seg">${options.map(o=>`<button data-v="${o[0]}" class="${cfg[key]===o[0]?'active':''}">${o[1]}</button>`).join('')}</div>`);
+  c.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ cfg[key]=b.dataset.v; render(); }));
+  return row(label, c, helper);
+}
+
+/* colour control that also understands the 'auto' sentinel */
+function colorChip(label, key, allowAuto){
+  const isAuto = allowAuto && cfg[key]==='auto';
+  const val = isAuto ? '#131313' : (cfg[key]||'#000000');
+  const c = h(`<div class="color-chip">
+    <span class="color-label">${label}</span>
+    <div class="color-ctl">
+      ${allowAuto?`<label class="mini-toggle" title="Take this from the site header"><input type="checkbox" ${isAuto?'checked':''}>auto</label>`:''}
+      <input type="color" value="${val}" ${isAuto?'disabled':''}>
+    </div>
+  </div>`);
+  c.querySelector('input[type=color]').addEventListener('input', e=>{ cfg[key]=e.target.value; refresh(); });
+  if (allowAuto) c.querySelector('.mini-toggle input').addEventListener('change', e=>{
+    cfg[key] = e.target.checked ? 'auto' : '#131313';
+    render();
+  });
+  return c;
+}
+
+function colorBox(chips){
+  const box = h(`<div class="color-row"></div>`);
+  chips.forEach(c=>box.appendChild(c));
+  return box;
+}
+
+function optionGrid(key, opts, cols){
+  const g = h(`<div class="layout-grid${cols===3?' cols3':''}"></div>`);
+  opts.forEach(o=>{
+    const b = h(`<button class="layout-opt ${cfg[key]===o.v?'active':''}" title="${o.title||o.label}">
+      ${o.icon||''}<span>${o.label}</span></button>`);
+    b.addEventListener('click', ()=>{ cfg[key]=o.v; render(); });
+    g.appendChild(b);
+  });
+  return g;
+}
+
+/* =========================================================================
+   Little inline SVGs for the pickers
+   ========================================================================= */
+const ic = {
+  panelRight:`<svg width="30" height="20" viewBox="0 0 30 20" fill="none"><rect x=".6" y=".6" width="28.8" height="18.8" rx="2.4" stroke="#C9C9CE"/><rect x="18" y="1" width="12" height="18" rx="2.4" fill="#18181B"/></svg>`,
+  panelLeft:`<svg width="30" height="20" viewBox="0 0 30 20" fill="none"><rect x=".6" y=".6" width="28.8" height="18.8" rx="2.4" stroke="#C9C9CE"/><rect x="0" y="1" width="12" height="18" rx="2.4" fill="#18181B"/></svg>`,
+  panelFull:`<svg width="30" height="20" viewBox="0 0 30 20" fill="none"><rect x=".6" y=".6" width="28.8" height="18.8" rx="2.4" fill="#18181B"/></svg>`,
+  alignL:`<svg width="26" height="16" viewBox="0 0 26 16" fill="none" stroke="#18181B" stroke-width="1.7" stroke-linecap="round"><path d="M2 4h16M2 8h11M2 12h14"/></svg>`,
+  alignC:`<svg width="26" height="16" viewBox="0 0 26 16" fill="none" stroke="#18181B" stroke-width="1.7" stroke-linecap="round"><path d="M5 4h16M8 8h10M6 12h14"/></svg>`,
+  alignR:`<svg width="26" height="16" viewBox="0 0 26 16" fill="none" stroke="#18181B" stroke-width="1.7" stroke-linecap="round"><path d="M8 4h16M13 8h11M10 12h14"/></svg>`,
+  plus:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#18181B" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>`,
+  chevron:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#18181B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`,
+  caret:`<svg width="20" height="20" viewBox="0 0 24 24" fill="#18181B"><path d="M12 15.5 5.5 9h13z"/></svg>`,
+  arrow:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#18181B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>`,
+  fx:(inner)=>`<svg width="30" height="18" viewBox="0 0 30 18" fill="none">${inner}</svg>`
+};
+
+const HOVER_OPTS = [
+  {v:'wipe', label:'Wipe', title:'Dark bar sweeps up, text inverts',
+   icon:ic.fx(`<rect x="1" y="1" width="28" height="16" rx="2" fill="#EFEFF1"/><rect x="1" y="7" width="28" height="10" rx="2" fill="#18181B"/><rect x="5" y="10" width="12" height="3" rx="1.5" fill="#fff"/>`)},
+  {v:'rollup', label:'Roll', title:'Label rolls out, a clone rolls in',
+   icon:ic.fx(`<rect x="1" y="1" width="28" height="16" rx="2" fill="#EFEFF1"/><rect x="5" y="3" width="12" height="3" rx="1.5" fill="#B4B4BB"/><rect x="5" y="10" width="16" height="3" rx="1.5" fill="#18181B"/><path d="M24 11.5l2-2 2 2" stroke="#18181B" stroke-width="1.4" stroke-linecap="round"/>`)},
+  {v:'charRoll', label:'Letters', title:'Each letter rolls on its own beat',
+   icon:ic.fx(`<rect x="1" y="1" width="28" height="16" rx="2" fill="#EFEFF1"/><rect x="5" y="9" width="3" height="4" rx="1" fill="#18181B"/><rect x="10" y="7" width="3" height="6" rx="1" fill="#18181B"/><rect x="15" y="5" width="3" height="8" rx="1" fill="#18181B"/><rect x="20" y="7" width="3" height="6" rx="1" fill="#18181B"/>`)},
+  {v:'slide', label:'Slide', title:'Label glides, an arrow leads it',
+   icon:ic.fx(`<rect x="1" y="1" width="28" height="16" rx="2" fill="#EFEFF1"/><rect x="4" y="7.5" width="13" height="3" rx="1.5" fill="#18181B"/><path d="M20 9h5M23 6.8L25.2 9 23 11.2" stroke="#FF4C24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`)},
+  {v:'underline', label:'Underline', title:'Rule grows from the leading edge',
+   icon:ic.fx(`<rect x="1" y="1" width="28" height="16" rx="2" fill="#EFEFF1"/><rect x="5" y="6" width="16" height="3" rx="1.5" fill="#18181B"/><rect x="5" y="11.5" width="16" height="1.6" rx=".8" fill="#FF4C24"/>`)},
+  {v:'fill', label:'Fill', title:'Colour sweeps through the glyphs',
+   icon:ic.fx(`<rect x="1" y="1" width="28" height="16" rx="2" fill="#EFEFF1"/><rect x="5" y="7.5" width="9" height="3" rx="1.5" fill="#FF4C24"/><rect x="15" y="7.5" width="9" height="3" rx="1.5" fill="#C3C3C9"/>`)},
+  {v:'outline', label:'Outline', title:'Solid type hollows out',
+   icon:ic.fx(`<rect x="1" y="1" width="28" height="16" rx="2" fill="#EFEFF1"/><rect x="5" y="7" width="9" height="4" rx="1.4" fill="#18181B"/><rect x="15.7" y="7.7" width="7.6" height="2.6" rx="1" stroke="#18181B" stroke-width="1.3"/>`)},
+  {v:'none', label:'None', title:'No hover treatment',
+   icon:ic.fx(`<rect x="1" y="1" width="28" height="16" rx="2" fill="#EFEFF1"/><path d="M11 6l8 6M19 6l-8 6" stroke="#B4B4BB" stroke-width="1.6" stroke-linecap="round"/>`)}
+];
+
+const ENTRANCE_OPTS = [
+  {v:'riseRotate', label:'Rise + tilt'}, {v:'rise', label:'Rise'},
+  {v:'fade', label:'Fade up'}, {v:'blur', label:'Blur in'}, {v:'scale', label:'Scale'}
+];
+
+/* =========================================================================
+   Sidebar
+   ========================================================================= */
+function render(){
+  const c = $('#controls');
+  const openState = {};
+  c.querySelectorAll('.group').forEach((g,i)=>openState[i]=g.classList.contains('open'));
+  c.innerHTML = '';
+  let gi = 0;
+  const add = (title, defOpen, body) => {
+    const o = (openState[gi] !== undefined) ? openState[gi] : defOpen;
+    gi++;
+    c.appendChild(group(title, o, body));
+  };
+
+  /* -- 1. Activation ---------------------------------------------------- */
+  add('Activation', true, b=>{
+    b.appendChild(toggle('Hamburger on desktop', 'desktopBurger'));
+    b.appendChild(toggle('Also replace the mobile menu', 'takeOverMobile'));
+    b.appendChild(number('Desktop starts at (px)', 'desktopMinWidth', 320, 1600, 1,
+      'Above this width the inline nav is hidden and the burger takes over.'));
+    b.appendChild(seg('Burger position', 'burgerAlign', [
+      ['default','Theme default'], ['right','Far right'], ['left','Far left']
+    ]));
+    b.appendChild(h('<div class="subgroup-title">Keep in the site header</div>'));
+    b.appendChild(toggle('Social icons / buttons', 'keepHeaderActions'));
+    b.appendChild(toggle('Cart icon', 'keepHeaderCart'));
+  });
+
+  /* -- 2. Panel --------------------------------------------------------- */
+  add('Panel & spacing', false, b=>{
+    b.appendChild(row('Opens from', optionGrid('side', [
+      {v:'right', label:'Right', icon:ic.panelRight},
+      {v:'left',  label:'Left',  icon:ic.panelLeft},
+      {v:'full',  label:'Full',  icon:ic.panelFull}
+    ], 3)));
+    const g1 = h('<div class="grid2"></div>');
+    g1.appendChild(text('Width', 'width', '46vw'));
+    g1.appendChild(number('Max width (px)', 'maxWidth', 300, 1600, 10));
+    b.appendChild(g1);
+    b.appendChild(number('Corner radius (px)', 'radius', 0, 80, 1));
+    const g2 = h('<div class="grid2"></div>');
+    g2.appendChild(text('Side padding', 'padX', '5vw'));
+    g2.appendChild(number('Top padding (px)', 'padTop', 0, 400, 2));
+    b.appendChild(g2);
+    const g3 = h('<div class="grid2"></div>');
+    g3.appendChild(number('Bottom padding', 'padBottom', 0, 300, 2));
+    g3.appendChild(number('Gap above footer', 'footerGap', 0, 200, 2));
+    b.appendChild(g3);
+    b.appendChild(number('Extra gap between items (px)', 'itemGap', 0, 60, 1));
+
+    b.appendChild(h('<div class="subgroup-title">Mobile overrides</div>'));
+    const g4 = h('<div class="grid2"></div>');
+    g4.appendChild(text('Width', 'widthMobile', '100%'));
+    g4.appendChild(text('Side padding', 'padXMobile', '7vw'));
+    b.appendChild(g4);
+    b.appendChild(number('Top padding (px)', 'padTopMobile', 0, 300, 2));
+  });
+
+  /* -- 3. Curtains ------------------------------------------------------ */
+  add('Curtains', true, b=>{
+    b.appendChild(h(`<div class="helper-text" style="margin:-4px 0 10px">Each curtain slides in on its own beat. The <b>last</b> one stays behind the menu, so it is the panel background.</div>`));
+    cfg.curtains.forEach((col, i)=>{
+      const last = i === cfg.curtains.length-1;
+      const it = h(`<div class="curtain-item">
+        <span class="idx">${last?'Panel bg':'Curtain '+(i+1)}</span>
+        <input type="color" value="${col}">
+        <input type="text" value="${col}">
+        <button class="icon-btn" ${cfg.curtains.length<=1?'disabled':''} title="Remove">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>`);
+      const [cp, tx] = it.querySelectorAll('input');
+      cp.addEventListener('input', e=>{ cfg.curtains[i]=e.target.value; tx.value=e.target.value; refresh(); });
+      tx.addEventListener('input', e=>{ cfg.curtains[i]=e.target.value; if(/^#[0-9a-f]{6}$/i.test(e.target.value)) cp.value=e.target.value; refresh(); });
+      it.querySelector('.icon-btn').addEventListener('click', ()=>{ cfg.curtains.splice(i,1); render(); });
+      b.appendChild(it);
+    });
+    const addBtn = h(`<button class="add-btn" ${cfg.curtains.length>=5?'disabled':''}>+ Add curtain</button>`);
+    addBtn.addEventListener('click', ()=>{ cfg.curtains.splice(cfg.curtains.length-1, 0, '#111111'); render(); });
+    b.appendChild(addBtn);
+
+    b.appendChild(h('<div style="height:14px"></div>'));
+    b.appendChild(colorBox([ colorChip('Backdrop tint', 'scrimColor') ]));
+    b.appendChild(number('Backdrop opacity', 'scrimOpacity', 0, 1, 0.05));
+  });
+
+  /* -- 4. Motion -------------------------------------------------------- */
+  add('Motion', false, b=>{
+    b.appendChild(number('Base duration (s)', 'duration', 0.2, 2, 0.05));
+    const g1 = h('<div class="grid2"></div>');
+    g1.appendChild(number('Curtain stagger', 'curtainStagger', 0, .6, .01));
+    g1.appendChild(number('Curtain duration', 'curtainDuration', .1, 2, .025));
+    b.appendChild(g1);
+    const g2 = h('<div class="grid2"></div>');
+    g2.appendChild(number('Link stagger', 'linkStagger', 0, .4, .01));
+    g2.appendChild(number('Link delay', 'linkDelay', 0, 1.5, .05));
+    b.appendChild(g2);
+    b.appendChild(select('Link entrance', 'linkEntrance', ENTRANCE_OPTS.map(o=>[o.v,o.label])));
+    b.appendChild(number('Footer fade stagger', 'fadeStagger', 0, .3, .01));
+  });
+
+  /* -- 5. Typography ---------------------------------------------------- */
+  add('Menu typography', true, b=>{
+    b.appendChild(select('Font', 'fontSource', [
+      ['headerNav','Match the header navigation'],
+      ['siteHeading','Match the site headings'],
+      ['custom','Custom font stack']
+    ], 'Sampled live from your site so the menu always matches the header.'));
+    if (cfg.fontSource === 'custom'){
+      if (cfg.fontFamily === 'auto') cfg.fontFamily = '';
+      b.appendChild(text('Font family', 'fontFamily', 'e.g. "Inter", sans-serif'));
+    } else if (cfg.fontFamily !== 'auto'){
+      cfg.fontFamily = 'auto';
+    }
+
+    b.appendChild(row('Alignment', optionGrid('align', [
+      {v:'left', label:'Left', icon:ic.alignL},
+      {v:'center', label:'Center', icon:ic.alignC},
+      {v:'right', label:'Right', icon:ic.alignR}
+    ], 3)));
+
+    const g1 = h('<div class="grid2"></div>');
+    g1.appendChild(number('Size desktop (px)', 'fontSize', 14, 200, 1));
+    g1.appendChild(number('Size mobile (px)', 'fontSizeMobile', 12, 120, 1));
+    b.appendChild(g1);
+    const g2 = h('<div class="grid2"></div>');
+    g2.appendChild(number('Weight', 'fontWeight', 100, 900, 100));
+    g2.appendChild(number('Line height', 'lineHeight', .8, 2, .01));
+    b.appendChild(g2);
+    const g3 = h('<div class="grid2"></div>');
+    g3.appendChild(number('Tracking (em)', 'letterSpacing', -.1, .3, .005));
+    g3.appendChild(number('Row padding (px)', 'linkPaddingY', 0, 60, 1));
+    b.appendChild(g3);
+    b.appendChild(seg('Case', 'textTransform', [
+      ['uppercase','ABC'], ['none','Abc'], ['lowercase','abc'], ['capitalize','Abc¹']
+    ]));
+    b.appendChild(colorBox([ colorChip('Menu text', 'textColor', true) ]));
+  });
+
+  /* -- 6. Hover --------------------------------------------------------- */
+  add('Hover effect', true, b=>{
+    b.appendChild(optionGrid('hoverEffect', HOVER_OPTS));
+    b.appendChild(colorBox([
+      colorChip('Hover text', 'hoverTextColor'),
+      colorChip('Hover fill', 'hoverBgColor')
+    ]));
+  });
+
+  /* -- 7. Numbers ------------------------------------------------------- */
+  add('Item numbers', false, b=>{
+    b.appendChild(toggle('Show numbers', 'showNumbers'));
+    if (cfg.showNumbers){
+      b.appendChild(seg('Format', 'numberFormat', [['pad','01'], ['plain','1']]));
+      b.appendChild(seg('Position', 'numberPosition', [['after','After label'], ['before','Before label']]));
+      b.appendChild(colorBox([ colorChip('Number colour', 'numberColor') ]));
+    }
+  });
+
+  /* -- 8. Submenu ------------------------------------------------------- */
+  add('Dropdowns', true, b=>{
+    b.appendChild(toggle('Slide-down submenus for folders', 'submenuEnabled',
+      ()=>{ render(); }));
+    if (cfg.submenuEnabled){
+      b.appendChild(row('Toggle icon', optionGrid('submenuIcon', [
+        {v:'plus', label:'Plus', icon:ic.plus},
+        {v:'chevron', label:'Chevron', icon:ic.chevron},
+        {v:'caret', label:'Caret', icon:ic.caret},
+        {v:'arrow', label:'Arrow', icon:ic.arrow}
+      ])));
+      b.appendChild(seg('Icon placement', 'submenuIconPosition', [
+        ['inline','Beside label'], ['edge','Panel edge']
+      ]));
+      const g = h('<div class="grid2"></div>');
+      g.appendChild(number('Font size (px)', 'submenuFontSize', 10, 60, 1));
+      g.appendChild(number('Indent (px)', 'submenuIndent', 0, 120, 2));
+      b.appendChild(g);
+      b.appendChild(number('Slide duration (s)', 'submenuDuration', .1, 1.5, .05));
+      b.appendChild(number('Item stagger (s)', 'submenuLinkStagger', 0, .2, .005));
+      b.appendChild(toggle('Only one open at a time', 'submenuAutoClose'));
+      b.appendChild(colorBox([ colorChip('Submenu text', 'submenuColor', true) ]));
+    }
+  });
+
+  /* -- 9. Close button -------------------------------------------------- */
+  add('Close button', false, b=>{
+    b.appendChild(toggle('Show close button in the panel', 'closeButton'));
+    if (cfg.closeButton){
+      b.appendChild(seg('Style', 'closeStyle', [['text','Label + ✕'], ['icon','✕ only']]));
+      if (cfg.closeStyle === 'text') b.appendChild(text('Label', 'closeLabel', 'Close'));
+      b.appendChild(number('Icon size (px)', 'closeSize', 12, 60, 1));
+    }
+  });
+
+  /* -- 10. Footer ------------------------------------------------------- */
+  add('Panel footer', false, b=>{
+    b.appendChild(toggle('Mirror the site social icons', 'showSocials'));
+    b.appendChild(toggle('Mirror the header button', 'showHeaderButton'));
+    b.appendChild(text('Footer text', 'footerText', 'e.g. Woodstock, NY'));
+
+    b.appendChild(h('<div class="subgroup-title">Extra footer links</div>'));
+    cfg.footerLinks.forEach((l,i)=>{
+      const it = h(`<div class="curtain-item">
+        <input type="text" value="${(l.label||'').replace(/"/g,'&quot;')}" placeholder="Label">
+        <input type="text" value="${(l.url||'').replace(/"/g,'&quot;')}" placeholder="URL">
+        <button class="icon-btn" title="Remove">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>`);
+      const [a,u] = it.querySelectorAll('input');
+      a.addEventListener('input', e=>{ cfg.footerLinks[i].label=e.target.value; refresh(); });
+      u.addEventListener('input', e=>{ cfg.footerLinks[i].url=e.target.value; refresh(); });
+      it.querySelector('.icon-btn').addEventListener('click', ()=>{ cfg.footerLinks.splice(i,1); render(); });
+      b.appendChild(it);
+    });
+    const ab = h('<button class="add-btn">+ Add link</button>');
+    ab.addEventListener('click', ()=>{ cfg.footerLinks.push({label:'',url:''}); render(); });
+    b.appendChild(ab);
+  });
+
+  /* -- 11. Behaviour ---------------------------------------------------- */
+  add('Behaviour', false, b=>{
+    b.appendChild(toggle('Close on Escape', 'closeOnEsc'));
+    b.appendChild(toggle('Close when a link is clicked', 'closeOnLinkClick'));
+    b.appendChild(toggle('Close when the backdrop is clicked', 'closeOnScrim'));
+    b.appendChild(toggle('Lock page scroll while open', 'lockScroll'));
+  });
+
+  /* -- 12. Install ------------------------------------------------------ */
+  add('How to install', false, b=>{
+    b.appendChild(h(`<div class="note">
+      <b>Where this goes</b>
+      <ol>
+        <li>Copy the code with the button above.</li>
+        <li>In Squarespace: <b>Settings → Advanced → Code Injection</b>.</li>
+        <li>Paste into the <b>Footer</b> box and save.</li>
+      </ol>
+      <div style="margin-top:9px">The menu builds itself from your existing Squarespace navigation — folders become slide-down dropdowns automatically. Nothing to maintain twice. It stays switched off inside the Squarespace editor.</div>
+    </div>`));
+  });
+
+  refresh();
+}
+
+/* =========================================================================
+   Output
+   ========================================================================= */
+function diffConfig(){
+  const out = {};
+  for (const k in DEFAULTS){
+    const a = JSON.stringify(cfg[k]), b = JSON.stringify(DEFAULTS[k]);
+    if (a !== b) out[k] = cfg[k];
+  }
+  return out;
+}
+
+function buildCode(){
+  const d = diffConfig();
+  const body = Object.keys(d).length
+    ? JSON.stringify(d, null, 2).replace(/^/gm,'  ').trim()
+    : '{}';
+  return `<!-- SDL Curtain Menu v1.0 — Square Design Lab -->
+<link rel="stylesheet" href="${CDN}/curtainMenu.css">
+<script>
+  window.SDL_CURTAIN_MENU_CONFIG = ${body};
+<\/script>
+<script src="${CDN}/curtainMenu.js" defer><\/script>`;
+}
+
+/* =========================================================================
+   Live preview — the real plugin, running on a mock Squarespace header
+   ========================================================================= */
+function previewDoc(){
+  const mockNav = `
+    <div class="header-nav-item header-nav-item--collection"><a href="#">Studio</a></div>
+    <div class="header-nav-item header-nav-item--collection"><a href="#">Projects</a></div>
+    <div class="header-nav-item header-nav-item--folder">
+      <button class="header-nav-folder-title"><span class="header-nav-folder-title-text">Services</span></button>
+      <div class="header-nav-folder-content">
+        <div class="header-nav-folder-item"><a href="#"><span class="header-nav-folder-item-content">Brand identity</span></a></div>
+        <div class="header-nav-folder-item"><a href="#"><span class="header-nav-folder-item-content">Web design</span></a></div>
+        <div class="header-nav-folder-item"><a href="#"><span class="header-nav-folder-item-content">Art direction</span></a></div>
+        <div class="header-nav-folder-item"><a href="#"><span class="header-nav-folder-item-content">Motion</span></a></div>
+      </div>
+    </div>
+    <div class="header-nav-item header-nav-item--collection"><a href="#">Journal</a></div>
+    <div class="header-nav-item header-nav-item--collection"><a href="#">Contact</a></div>`;
+
+  const socialSvg = (p)=>`<a href="#" class="icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="${p}"/></svg></a>`;
+
+  return `<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:'Inter',sans-serif;background:#0F1210;color:#fff;overflow:hidden}
+  .stage{position:absolute;inset:0;background:
+    radial-gradient(120% 90% at 20% 10%, #2C3A31 0%, #141815 55%, #0B0E0C 100%);}
+  .stage::after{content:'';position:absolute;inset:26px;border:1px solid rgba(255,255,255,.13);border-radius:14px}
+  .hero{position:absolute;left:56px;bottom:70px;max-width:60%}
+  .hero h1{font-size:clamp(34px,5.4vw,64px);line-height:1.02;letter-spacing:-.03em;margin:0 0 12px;font-weight:800}
+  .hero p{margin:0;opacity:.62;font-size:14px;max-width:34ch;line-height:1.55}
+
+  /* --- mock Squarespace header (class names match the real thing) --- */
+  .header-display-desktop{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;
+    gap:18px;padding:20px 30px;z-index:50}
+  .header-title-nav-wrapper{display:flex;align-items:center;gap:26px;flex:1}
+  .header-title-text a{color:#fff;text-decoration:none;font-weight:700;letter-spacing:-.02em;font-size:16px}
+  .header-nav-list{display:flex;gap:20px}
+  .header-nav-item > a,.header-nav-folder-title{color:#fff;text-decoration:none;font-size:13.5px;
+    background:none;border:0;font-family:inherit;cursor:pointer;padding:0;opacity:.86}
+  .header-nav-folder-content{display:none}
+  .header-actions{display:flex;align-items:center;gap:14px}
+  .header-actions-action--social{display:flex;gap:11px}
+  .header-actions-action--social a{width:17px;height:17px;color:#fff;opacity:.78;display:block}
+  .header-actions-action--social svg{width:100%;height:100%}
+  .sqs-button-element--primary{background:#fff;color:#111;text-decoration:none;font-size:13px;
+    font-weight:600;padding:9px 17px;border-radius:999px}
+  .header-burger{display:none}
+  .header-burger-btn{background:none;border:0;cursor:pointer;padding:6px;display:block}
+  .burger-box{width:26px;height:16px;position:relative}
+  .burger-inner div{position:absolute;left:0;height:1.6px;width:100%;background:#fff;
+    transition:transform .35s cubic-bezier(.65,.05,0,1),opacity .2s}
+  .top-bun{top:0}.patty{top:7.2px;opacity:0}.bottom-bun{top:14.4px}
+  .burger--active .top-bun{transform:translateY(7.2px) rotate(45deg)}
+  .burger--active .bottom-bun{transform:translateY(-7.2px) rotate(-45deg)}
+  .hint{position:absolute;top:64px;right:30px;font-size:11px;opacity:.5;z-index:60}
+</style>
+<link rel="stylesheet" href="${CDN}/curtainMenu.css">
+</head><body>
+<div class="stage"></div>
+<div class="hero"><h1>Field Notes<br>From the Studio</h1><p>A mock page so you can feel the menu exactly as your visitors will.</p></div>
+
+<div class="header-display-desktop">
+  <div class="header-title-nav-wrapper">
+    <div class="header-title"><div class="header-title-text"><a href="#">Square Design Lab</a></div></div>
+    <div class="header-nav"><div class="header-nav-wrapper"><nav class="header-nav-list">${mockNav}</nav></div></div>
+  </div>
+  <div class="header-actions header-actions--right">
+    <div class="header-actions-action header-actions-action--social">
+      ${socialSvg('M13.5 9H16V6h-2.5C11.6 6 10 7.6 10 9.5V11H8v3h2v7h3v-7h2.2l.4-3H13v-1.2c0-.5.2-.8.5-.8z')}
+      ${socialSvg('M22 5.9c-.7.3-1.5.5-2.3.6.8-.5 1.5-1.3 1.8-2.3-.8.5-1.7.8-2.6 1a4.1 4.1 0 0 0-7 3.7A11.6 11.6 0 0 1 3.5 4.6a4.1 4.1 0 0 0 1.3 5.5c-.7 0-1.3-.2-1.9-.5a4.1 4.1 0 0 0 3.3 4 4.2 4.2 0 0 1-1.9.1 4.1 4.1 0 0 0 3.8 2.9A8.3 8.3 0 0 1 2 18.3a11.6 11.6 0 0 0 6.3 1.8c7.5 0 11.7-6.3 11.7-11.7v-.5c.8-.6 1.5-1.3 2-2z')}
+      ${socialSvg('M12 2.2c3.2 0 3.6 0 4.9.1 3.3.1 4.8 1.7 4.9 4.9.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.9c-.1 3.2-1.6 4.8-4.9 4.9-1.3.1-1.6.1-4.9.1s-3.6 0-4.9-.1c-3.3-.2-4.8-1.7-4.9-4.9C2.1 15.6 2.1 15.2 2.1 12s0-3.6.1-4.9C2.3 3.9 3.8 2.4 7.1 2.3c1.3-.1 1.7-.1 4.9-.1zm0 5.4a4.4 4.4 0 1 0 0 8.8 4.4 4.4 0 0 0 0-8.8zm0 7.2a2.9 2.9 0 1 1 0-5.8 2.9 2.9 0 0 1 0 5.8zm5.6-7.4a1 1 0 1 1-2.1 0 1 1 0 0 1 2.1 0z')}
+    </div>
+    <div class="header-actions-action header-actions-action--cta">
+      <a class="sqs-button-element--primary" href="#">Start a project</a>
+    </div>
+  </div>
+  <div class="header-burger"><button class="header-burger-btn burger">
+    <div class="burger-box"><div class="burger-inner">
+      <div class="top-bun"></div><div class="patty"></div><div class="bottom-bun"></div>
+    </div></div>
+  </button></div>
+</div>
+<div class="hint">↑ click the burger</div>
+
+<script>window.SDL_CURTAIN_MENU_PREVIEW = true; window.SDL_CURTAIN_MENU_CONFIG = ${JSON.stringify(cfg)};<\/script>
+<script src="${CDN}/curtainMenu.js"><\/script>
+</body></html>`;
+}
+
+let refreshTimer;
+function refresh(){
+  $('#codeOut').textContent = buildCode();
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(()=>{
+    $('#previewFrame').srcdoc = previewDoc();
+  }, 260);
+}
+
+/* =========================================================================
+   Chrome wiring
+   ========================================================================= */
+$('#resetBtn').addEventListener('click', ()=>{ cfg = structuredClone(DEFAULTS); render(); });
+
+document.querySelectorAll('.device-toggle button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.device-toggle button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    $('#deviceFrame').classList.toggle('mobile', b.dataset.device === 'mobile');
+  });
+});
+
+$('#replayBtn').addEventListener('click', ()=>{ $('#previewFrame').srcdoc = previewDoc(); });
+
+$('#codeToggle').addEventListener('click', ()=>{
+  const p = $('#codePanel');
+  p.classList.toggle('open');
+  $('#codeToggle').textContent = p.classList.contains('open') ? 'Hide code' : 'Show code';
+});
+$('#codeClose').addEventListener('click', ()=>{
+  $('#codePanel').classList.remove('open');
+  $('#codeToggle').textContent = 'Show code';
+});
+
+$('#copyBtn').addEventListener('click', async ()=>{
+  try{
+    await navigator.clipboard.writeText(buildCode());
+    const b = $('#copyBtn');
+    const original = b.innerHTML;
+    b.classList.add('done');
+    b.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied';
+    setTimeout(()=>{ b.classList.remove('done'); b.innerHTML = original; }, 1600);
+  }catch(e){
+    $('#codePanel').classList.add('open');
+    $('#codeToggle').textContent = 'Hide code';
+  }
+});
+
+render();
+</script>
+</body>
+</html>
