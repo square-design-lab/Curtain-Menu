@@ -71,6 +71,16 @@ html.sdl-cm-desktop.sdl-cm-burger-left .header-display-desktop .header-burger{
   margin-right: 24px;
 }
 
+/* Everything else in the header — social icons, buttons, cart, account — is
+   left exactly as the site owner set it up. These two classes are only added
+   when the config explicitly asks for them to go. */
+html.sdl-cm-desktop.sdl-cm-hide-actions .header-display-desktop .header-actions{
+  display: none !important;
+}
+html.sdl-cm-desktop.sdl-cm-hide-cart .header-display-desktop .header-actions-action--cart{
+  display: none !important;
+}
+
 /* The plugin owns the overlay — never let Squarespace's own menu appear. */
 html.sdl-cm-active .header-menu{
   opacity: 0 !important;
@@ -133,6 +143,92 @@ html.sdl-cm-open .header-burger{
 }
 .sdl-cm[data-side="left"]  .sdl-cm__panel{ margin-left: 0; margin-right: auto; }
 .sdl-cm[data-side="full"]  .sdl-cm__panel{ margin: 0; width: 100%; max-width: none; }
+
+/* --- close control ------------------------------------------------------- */
+.sdl-cm__close{
+  position: absolute;
+  top: max(18px, calc(var(--sdlcm-pad-top) * .28));
+  right: var(--sdlcm-pad-x);
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 2px;
+  border: 0;
+  background: none;
+  font-family: var(--sdlcm-font);
+  font-size: max(13px, calc(var(--sdlcm-sub-size) * .85));
+  font-weight: 500;
+  letter-spacing: .01em;
+  line-height: 1;
+  color: var(--sdlcm-close-color, var(--sdlcm-text));
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.sdl-cm[data-side="left"] .sdl-cm__close{ right: auto; left: var(--sdlcm-pad-x); }
+.sdl-cm__close:hover{ opacity: .65; }
+.sdl-cm__close:focus-visible{ outline: 2px solid var(--sdlcm-num); outline-offset: 6px; }
+
+.sdl-cm__close-label{
+  position: relative;
+  display: inline-block;
+}
+.sdl-cm__close-label::after{
+  content: '';
+  position: absolute;
+  left: 0; bottom: -3px;
+  width: 100%; height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform .4s var(--sdlcm-hover-ease);
+}
+.sdl-cm__close:hover .sdl-cm__close-label::after{
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+.sdl-cm__close-icon{
+  display: block;
+  width: var(--sdlcm-close-size, 26px);
+  height: var(--sdlcm-close-size, 26px);
+  transition: transform .45s var(--sdlcm-hover-ease);
+}
+.sdl-cm__close-icon svg{ width: 100%; height: 100%; display: block; }
+.sdl-cm__close:hover .sdl-cm__close-icon{ transform: rotate(90deg); }
+
+.sdl-cm__close--icon{ gap: 0; }
+
+/* --- mirrored header button(s) ------------------------------------------- */
+.sdl-cm__cta{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.sdl-cm[data-align="center"] .sdl-cm__cta{ justify-content: center; }
+.sdl-cm[data-align="right"]  .sdl-cm__cta{ justify-content: flex-end; }
+.sdl-cm__cta-btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: .8em 1.6em;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-family: var(--sdlcm-font);
+  font-size: max(13px, calc(var(--sdlcm-sub-size) * .8));
+  font-weight: 500;
+  line-height: 1;
+  color: var(--sdlcm-text);
+  text-decoration: none;
+  transition: background-color .35s var(--sdlcm-hover-ease),
+              color .35s var(--sdlcm-hover-ease);
+}
+.sdl-cm__cta-btn:hover{
+  background: var(--sdlcm-hover-bg);
+  color: var(--sdlcm-hover-text);
+  border-color: var(--sdlcm-hover-bg);
+}
 
 /* Curtains — absolutely stacked, each slides in on its own beat. */
 .sdl-cm__curtains{
@@ -250,13 +346,13 @@ html.sdl-cm-open .header-burger{
   align-self: center;
   width: max(16px, calc(var(--sdlcm-size) * .32));
   height: max(16px, calc(var(--sdlcm-size) * .32));
-  margin-left: auto;
+  margin-left: .18em;
   color: var(--sdlcm-text);
   transition: transform .45s var(--sdlcm-hover-ease),
               color .35s var(--sdlcm-hover-ease);
 }
-.sdl-cm[data-align="center"] .sdl-cm__icon,
-.sdl-cm[data-align="right"] .sdl-cm__icon{ margin-left: .35em; }
+/* Pin the toggle to the panel edge instead of sitting beside the label */
+.sdl-cm[data-icon-pos="edge"][data-align="left"] .sdl-cm__icon{ margin-left: auto; }
 .sdl-cm__icon svg{ width: 100%; height: 100%; display: block; }
 .sdl-cm__item.is-open > .sdl-cm__row .sdl-cm__icon--plus{ transform: rotate(135deg); }
 .sdl-cm__item.is-open > .sdl-cm__row .sdl-cm__icon--chevron,

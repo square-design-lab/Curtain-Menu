@@ -74,9 +74,17 @@
     numberFormat: 'pad',      // pad | plain
     numberPosition: 'after',  // after | before
 
+    /* close control inside the panel */
+    closeButton: true,
+    closeStyle: 'text',       // text | icon
+    closeLabel: 'Close',
+    closeSize: 26,            // icon size in px
+    closeColor: '',           // '' inherits textColor
+
     /* submenu */
     submenuEnabled: true,
     submenuIcon: 'plus',      // plus | chevron | caret | arrow
+    submenuIconPosition: 'inline', // inline | edge
     submenuFontSize: 20,
     submenuColor: '#131313',
     submenuIndent: 24,
@@ -84,8 +92,13 @@
     submenuAutoClose: true,
     submenuLinkStagger: 0.035,
 
+    /* what stays in the site header alongside the burger */
+    keepHeaderActions: true,  // social icons, buttons, cart, account — left in place
+    keepHeaderCart: true,
+
     /* footer */
-    showSocials: true,
+    showSocials: true,        // mirror the site's social icons inside the panel
+    showHeaderButton: true,   // mirror the header button(s) inside the panel
     footerText: '',
     footerLinks: [],          // [{ label: 'hello@site.com', url: 'mailto:…' }]
 
@@ -167,6 +180,7 @@
     plus:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
     chevron: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
     caret:   '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.5 5.5 9h13z"/></svg>',
+    close:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
     arrow:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>',
     diagArrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'
   };
@@ -355,8 +369,41 @@
     return li;
   }
 
+  /* Clone the header's call-to-action button(s) so they stay reachable when a
+     full-width panel covers the real header. */
+  function readHeaderButtons() {
+    var found = document.querySelectorAll(
+      '.header-actions .header-actions-action--cta a, ' +
+      '.header-menu-cta a, ' +
+      '.header-actions .sqs-button-element--primary'
+    );
+    if (!found.length) return null;
+    var wrap = el('div', 'sdl-cm__cta');
+    var seen = {};
+    Array.prototype.forEach.call(found, function (a) {
+      var href = a.getAttribute('href') || '';
+      var text = a.textContent.trim();
+      if (!text || seen[href + text]) return;
+      seen[href + text] = 1;
+      var c = el('a', 'sdl-cm__cta-btn', { href: href || '#' });
+      if (a.getAttribute('target')) c.setAttribute('target', a.getAttribute('target'));
+      c.textContent = text;
+      wrap.appendChild(c);
+    });
+    return wrap.children.length ? wrap : null;
+  }
+
   function buildFooter() {
     var parts = [];
+
+    if (cfg.showHeaderButton) {
+      var cta = readHeaderButtons();
+      if (cta) {
+        cta.classList.add('sdl-cm__fade');
+        cta.setAttribute('data-cm-fade', '');
+        parts.push(cta);
+      }
+    }
 
     if (cfg.footerText) {
       var p = el('p', 'sdl-cm__foot-text sdl-cm__fade');
@@ -393,6 +440,24 @@
     return foot;
   }
 
+  function buildCloseButton() {
+    if (!cfg.closeButton) return null;
+    var btn = el('button', 'sdl-cm__close sdl-cm__close--' + cfg.closeStyle, {
+      type: 'button',
+      'data-cm-close': '',
+      'aria-label': 'Close menu'
+    });
+    if (cfg.closeStyle === 'text' && cfg.closeLabel) {
+      var lab = el('span', 'sdl-cm__close-label');
+      lab.textContent = cfg.closeLabel;
+      btn.appendChild(lab);
+    }
+    var ico = el('span', 'sdl-cm__close-icon', { 'aria-hidden': 'true' });
+    ico.innerHTML = ICONS.close;
+    btn.appendChild(ico);
+    return btn;
+  }
+
   function buildOverlay(items) {
     var root = el('div', 'sdl-cm', {
       'data-nav': 'closed',
@@ -416,6 +481,9 @@
       curtains.appendChild(layer);
     });
     panel.appendChild(curtains);
+
+    var closeBtn = buildCloseButton();
+    if (closeBtn) panel.appendChild(closeBtn);
 
     var list = el('ul', 'sdl-cm__list');
     items.forEach(function (d, i) { list.appendChild(buildItem(d, i)); });
@@ -497,12 +565,23 @@
     html.classList.add('sdl-cm-active');
     if (cfg.burgerAlign === 'left')  html.classList.add('sdl-cm-burger-left');
     if (cfg.burgerAlign === 'right') html.classList.add('sdl-cm-burger-right');
+    if (!cfg.keepHeaderActions) html.classList.add('sdl-cm-hide-actions');
+    if (!cfg.keepHeaderCart)    html.classList.add('sdl-cm-hide-cart');
 
-    var scrim   = root.querySelector('.sdl-cm__scrim');
-    var panel   = root.querySelector('.sdl-cm__panel');
-    var layers  = root.querySelectorAll('.sdl-cm__curtain');
-    var links   = root.querySelectorAll('.sdl-cm__link');
-    var fades   = root.querySelectorAll('[data-cm-fade]');
+    var scrim    = root.querySelector('.sdl-cm__scrim');
+    var panel    = root.querySelector('.sdl-cm__panel');
+    var layers   = root.querySelectorAll('.sdl-cm__curtain');
+    var links    = root.querySelectorAll('.sdl-cm__link');
+    var fades    = root.querySelectorAll('[data-cm-fade]');
+    var closeBtn = root.querySelector('.sdl-cm__close');
+
+    if (cfg.submenuIconPosition === 'edge') root.setAttribute('data-icon-pos', 'edge');
+    if (cfg.closeColor) root.style.setProperty('--sdlcm-close-color', cfg.closeColor);
+    root.style.setProperty('--sdlcm-close-size', unit(cfg.closeSize, '26px'));
+
+    /* A stale burger--active can survive a bfcache restore — start clean. */
+    burgerBtn.classList.remove('burger--active');
+    document.body.classList.remove('header--menu-open');
 
     var ease = bezier(cfg.ease[0], cfg.ease[1], cfg.ease[2], cfg.ease[3]);
     var outSign = cfg.side === 'left' ? -1 : 1;
@@ -564,6 +643,12 @@
           { xPercent: 101 * outSign },
           { xPercent: 0, stagger: cfg.curtainStagger, duration: cfg.curtainDuration }, '<')
         .fromTo(links, from, to, '<+=' + cfg.linkDelay);
+
+      if (closeBtn) {
+        tl.fromTo(closeBtn,
+          { autoAlpha: 0, rotate: -90 },
+          { autoAlpha: 1, rotate: 0, duration: cfg.duration * 0.8 }, '<-=0.15');
+      }
 
       if (fades.length) {
         tl.fromTo(fades,
@@ -660,7 +745,12 @@
       toggle();
     }, true);
 
-    if (cfg.closeOnScrim) scrim.addEventListener('click', close);
+    /* Every [data-cm-close] control shuts the menu — the scrim opts out if
+       the site owner wants the panel to stay put on outside clicks. */
+    Array.prototype.forEach.call(root.querySelectorAll('[data-cm-close]'), function (n) {
+      if (n === scrim && !cfg.closeOnScrim) return;
+      n.addEventListener('click', close);
+    });
 
     if (cfg.closeOnEsc) {
       document.addEventListener('keydown', function (e) {
